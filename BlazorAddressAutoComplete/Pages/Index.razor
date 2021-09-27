@@ -1,0 +1,60 @@
+﻿@page "/"
+@using BlazorAddressAutoComplete.Services
+@using BlazorAddressAutoComplete.Models
+@using Blazored.Typeahead
+@inject IAzureMapsService _azureMapsService
+
+
+<div class="row">
+    <div class="col-sm-12">
+
+
+        <BlazoredTypeahead SearchMethod="AzureSearchAddress" ValueChanged="AddressChanged" ValueExpression="@(() => selectedAddress)" Debounce="50" placeholder="Start typing to get list of related addresses using Azure Maps API"
+                           TValue="Result" TItem="Result">
+            <SelectedTemplate>
+                @if (selectedAddress != null)
+                {
+                    @selectedAddress.address.freeformAddress
+                }
+            </SelectedTemplate>
+            <ResultTemplate>
+                <span><i class="fas fa-map-marker-alt mr-2 ml-1"></i>@context.address.freeformAddress</span>
+            </ResultTemplate>
+            <HelpTemplate>
+
+            </HelpTemplate>
+        </BlazoredTypeahead>
+
+    </div>
+
+</div>
+@if (selectedAddress != null)
+{
+
+    <br /><p><strong>Selected Street 1:</strong> @selectedAddress.address.streetNumber  @selectedAddress.address.streetName</p>
+    <br /><p><strong>Selected City:</strong> @selectedAddress.address.municipality</p>
+    <br /><p><strong>Selected State:</strong> @selectedAddress.address.countrySubdivision</p>
+    <br /><p><strong>Selected Zip Code:</strong> @selectedAddress.address.postalCode</p>
+}
+@code
+{
+    private List<Result> resultAddresses { get; set; }
+    private Result selectedAddress { get; set; }
+
+    private async Task<IEnumerable<Result>> AzureSearchAddress(string value)
+    {
+        ResultsAutoComplete result = new ResultsAutoComplete();
+
+        if (!string.IsNullOrEmpty(value))
+        {
+            result = await _azureMapsService.AutocompleteAddress(value);
+        }
+
+        return result.results.ToList();
+    }
+    private void AddressChanged(Result value)
+    {
+
+        selectedAddress = value;
+    }
+}
